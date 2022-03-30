@@ -93,7 +93,7 @@ curl -X POST https://API_GATEWAY_URL -H "Content-Type: application/json" -d '{"c
  You should receive a confirmation email {"OrderStatus":"Canceled","Payment":"Refunded"}
 
  Step-Functions STOCK UNAVAILABLE
-<img src="states/stock-unavailable.png" alt="" width="70%"/>
+<img src="states/stock-unavailable.png" alt="" width="45%"/>
 
  To simulate a PAYMENT FAILURE edit the class com.ibercode.payment.PaymentProcess, comment/uncomment existing code and redeploy
 ````
@@ -109,10 +109,10 @@ curl -X POST https://API_GATEWAY_URL -H "Content-Type: application/json" -d '{"c
  You should receive a confirmation email {"OrderStatus":"Created","Payment":"Pending"}
 
  Step-Functions PAYMENT FAILURE
-<img src="states/payment-failed.png" alt="" width="70%"/>
+<img src="states/payment-failed.png" alt="" width="45%"/>
 
  DynamoDB Transactions
-<img src="dynamodb-transactions.png" alt="" width="70%"/>
+<img src="dynamodb-transactions.png" alt="" width="45%"/>
 
  CLEAN-UP
 ````
