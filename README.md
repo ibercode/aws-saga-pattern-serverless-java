@@ -77,7 +77,7 @@ curl -X POST https://API_GATEWAY_URL -H "Content-Type: application/json" -d '{"c
  You should receive a confirmation email {"orderStatus":"Completed","payment":"Completed"}
 
  Step-Functions Happy-Path
-<img src="states/happy-path.png" alt="" width="70%"/>
+<img src="states/happy-path.png" alt="" width="60%"/>
 
  To simulate an STOCK UNAVAILABLE edit the class com.ibercode.fulfillment.FulfillOrder, comment/uncomment existing code and redeploy 
 ````
