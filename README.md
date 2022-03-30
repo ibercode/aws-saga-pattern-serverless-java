@@ -77,7 +77,7 @@ curl -X POST https://API_GATEWAY_URL -H "Content-Type: application/json" -d '{"c
  You should receive a confirmation email {"orderStatus":"Completed","payment":"Completed"}
 
  Step-Functions Happy-Path
-<img src="states/happy-path.png" alt="" width="60%"/>
+<img src="states/happy-path.png" alt="" width="45%"/>
 
  To simulate an STOCK UNAVAILABLE edit the class com.ibercode.fulfillment.FulfillOrder, comment/uncomment existing code and redeploy 
 ````
@@ -95,7 +95,8 @@ curl -X POST https://API_GATEWAY_URL -H "Content-Type: application/json" -d '{"c
  Step-Functions STOCK UNAVAILABLE
 <img src="states/stock-unavailable.png" alt="" width="45%"/>
 
- To simulate a PAYMENT FAILURE edit the class com.ibercode.payment.PaymentProcess, comment/uncomment existing code and redeploy
+
+To simulate a PAYMENT FAILURE edit the class com.ibercode.payment.PaymentProcess, comment/uncomment existing code and redeploy
 ````
 mvn clean package
 sam deploy --s3-bucket pcvkcoidw9cf82938odw --stack-name saga-pattern --capabilities CAPABILITY_IAM
@@ -108,8 +109,10 @@ curl -X POST https://API_GATEWAY_URL -H "Content-Type: application/json" -d '{"c
 
  You should receive a confirmation email {"OrderStatus":"Created","Payment":"Pending"}
 
+
  Step-Functions PAYMENT FAILURE
 <img src="states/payment-failed.png" alt="" width="45%"/>
+
 
  DynamoDB Transactions
 <img src="dynamodb-transactions.png" alt="" width="45%"/>
