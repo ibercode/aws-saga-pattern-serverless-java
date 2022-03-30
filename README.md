@@ -111,7 +111,7 @@ curl -X POST https://API_GATEWAY_URL -H "Content-Type: application/json" -d '{"c
 
 
  Step-Functions PAYMENT FAILURE
-<img src="states/payment-failed.png" alt="" width="45%"/>
+<img src="states/payment-failed.png" alt="" width="80%"/>
 
 
  DynamoDB Transactions
