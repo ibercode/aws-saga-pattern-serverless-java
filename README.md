@@ -8,7 +8,7 @@ https://docs.aws.amazon.com/prescriptive-guidance/latest/modernization-data-pers
 ## Description
 
 In this example the SAGA Pattern is implemented by AWS Step-Functions in order to maintain data consistency across multiple Microservices, 
-and also offers compensation transactions case of failure.
+and also offers compensation transactions in case of failure.
 
 The SAM template contains all the information to deploy AWS resources and also the permission required by these service to communicate.
 
@@ -61,61 +61,60 @@ aws sns subscribe \
 --notification-endpoint YOUR_EMAIL@DOMAIN.com
 ````
 
+ Copy the API Gateway URL for the Orders endpoint from the SAM deploy output
+  i.e.
+ Outputs
+ -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Key                 PaymentsEndpoint
+ Description         API Gateway Orders Endpoint                                                                                                                                                                     
+ Value               https://______________.amazonaws.com/prod/orders
 
-#### Copy the API Gateway URL for the Orders endpoint from the SAM deploy output
-####  i.e.
-#### Outputs
-#### -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-#### Key                 PaymentsEndpoint
-#### Description         API Gateway Orders Endpoint                                                                                                                                                                     
-#### Value               https://______________.amazonaws.com/prod/orders
-
-#### Call the API Gateway - Happy-Path
+ Call the API Gateway - Happy-Path
 ````
 curl -X POST https://API_GATEWAY_URL -H "Content-Type: application/json" -d '{"customerId": "aaaa-1111","amount": "19.99"}'
 ````
 
-#### You should receive a confirmation email {"orderStatus":"Completed","payment":"Completed"}
+ You should receive a confirmation email {"orderStatus":"Completed","payment":"Completed"}
 
-#### Step-Functions Happy-Path
+ Step-Functions Happy-Path
 <img src="states/happy-path.png" alt="" width="70%"/>
 
-#### To simulate an STOCK UNAVAILABLE edit the class com.ibercode.fulfillment.FulfillOrder, comment/uncomment existing code and redeploy 
+ To simulate an STOCK UNAVAILABLE edit the class com.ibercode.fulfillment.FulfillOrder, comment/uncomment existing code and redeploy 
 ````
 mvn clean package
 sam deploy --s3-bucket pcvkcoidw9cf82938odw --stack-name saga-pattern --capabilities CAPABILITY_IAM
 ````
 
-#### Call the API Gateway 
+ Call the API Gateway 
 ````
 curl -X POST https://API_GATEWAY_URL -H "Content-Type: application/json" -d '{"customerId": "bbbb-2222","amount": "29.99"}'
 ````
 
-#### You should receive a confirmation email {"OrderStatus":"Canceled","Payment":"Refunded"}
+ You should receive a confirmation email {"OrderStatus":"Canceled","Payment":"Refunded"}
 
-#### Step-Functions STOCK UNAVAILABLE
+ Step-Functions STOCK UNAVAILABLE
 <img src="states/stock-unavailable.png" alt="" width="70%"/>
 
-#### To simulate a PAYMENT FAILURE edit the class com.ibercode.payment.PaymentProcess, comment/uncomment existing code and redeploy
+ To simulate a PAYMENT FAILURE edit the class com.ibercode.payment.PaymentProcess, comment/uncomment existing code and redeploy
 ````
 mvn clean package
 sam deploy --s3-bucket pcvkcoidw9cf82938odw --stack-name saga-pattern --capabilities CAPABILITY_IAM
 ````
 
-#### Call the API Gateway
+ Call the API Gateway
 ````
 curl -X POST https://API_GATEWAY_URL -H "Content-Type: application/json" -d '{"customerId": "cccc-3333","amount": "39.99"}'
 ````
 
-#### You should receive a confirmation email {"OrderStatus":"Created","Payment":"Pending"}
+ You should receive a confirmation email {"OrderStatus":"Created","Payment":"Pending"}
 
-#### Step-Functions PAYMENT FAILURE
+ Step-Functions PAYMENT FAILURE
 <img src="states/payment-failed.png" alt="" width="70%"/>
 
-#### DynamoDB Transactions
+ DynamoDB Transactions
 <img src="dynamodb-transactions.png" alt="" width="70%"/>
 
-#### CLEAN-UP
+ CLEAN-UP
 ````
 aws cloudformation delete-stack --stack-name saga-pattern
 
