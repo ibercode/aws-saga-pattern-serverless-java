@@ -1,0 +1,134 @@
+Comment: A description of my state machine
+StartAt: CreateOrder
+States:
+  CreateOrder:
+    Type: Task
+    Resource: arn:aws:states:::dynamodb:putItem
+    Parameters:
+      TableName: OrdersTable
+      Item:
+        orderId:
+          S.$: $.orderId
+        customerId:
+          S.$: $.customerId
+        amount:
+          S.$: $.amount
+        orderStatus:
+          S.$: $.orderStatus
+        payment:
+          S.$: $.payment
+    Next: ProcessPayment
+    Catch:
+      - ErrorEquals:
+          - States.ALL
+        Next: NotifyFailure
+    ResultPath: null
+  NotifyFailure:
+    Type: Task
+    Resource: arn:aws:states:::sns:publish
+    Parameters:
+      TopicArn: ${NotifyFailure}
+      Message:
+        OrderStatus.$: $.orderStatus
+        Payment.$: $.payment
+    End: true
+  ProcessPayment:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: $.Payload
+    Parameters:
+      Payload.$: $
+      FunctionName: ${PaymentProcess}
+    Retry:
+      - ErrorEquals:
+          - Lambda.ServiceException
+          - Lambda.AWSLambdaException
+          - Lambda.SdkClientException
+        IntervalSeconds: 2
+        MaxAttempts: 6
+        BackoffRate: 2
+    Next: FulfillOrder
+    Catch:
+      - ErrorEquals:
+          - States.ALL
+        Next: SetOrderFailed
+        ResultPath: $.Cause
+  SetOrderFailed:
+    Type: Task
+    Resource: arn:aws:states:::dynamodb:updateItem
+    Parameters:
+      TableName: OrdersTable
+      Key:
+        orderId:
+          S.$: $.orderId
+      UpdateExpression: SET payment = :paymentRef, orderStatus = :orderStatusRef
+      ExpressionAttributeValues:
+        ':paymentRef':
+          S.$: $.payment
+        ':orderStatusRef':
+          S.$: $.orderStatus
+    Next: NotifyFailure
+    ResultPath: null
+  FulfillOrder:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: $.Payload
+    Parameters:
+      Payload.$: $
+      FunctionName: ${FulfillOrder}
+    Retry:
+      - ErrorEquals:
+          - Lambda.ServiceException
+          - Lambda.AWSLambdaException
+          - Lambda.SdkClientException
+        IntervalSeconds: 2
+        MaxAttempts: 6
+        BackoffRate: 2
+    Next: SetOrderCompleted
+    Catch:
+      - ErrorEquals:
+          - States.ALL
+        Next: RefundCustomer
+        ResultPath: $.Cause
+  SetOrderCompleted:
+    Type: Task
+    Resource: arn:aws:states:::dynamodb:updateItem
+    Parameters:
+      TableName: OrdersTable
+      Key:
+        orderId:
+          S.$: $.orderId
+      UpdateExpression: SET payment = :paymentRef, orderStatus = :orderStatusRef
+      ExpressionAttributeValues:
+        ':paymentRef':
+          S.$: $.payment
+        ':orderStatusRef':
+          S.$: $.orderStatus
+    Next: NotifySuccess
+    ResultPath: null
+  RefundCustomer:
+    Type: Task
+    Resource: arn:aws:states:::lambda:invoke
+    OutputPath: $.Payload
+    Parameters:
+      Payload.$: $
+      FunctionName: ${RefundCustomer}
+    Retry:
+      - ErrorEquals:
+          - Lambda.ServiceException
+          - Lambda.AWSLambdaException
+          - Lambda.SdkClientException
+        IntervalSeconds: 2
+        MaxAttempts: 6
+        BackoffRate: 2
+    Next: SetOrderFailed
+  NotifySuccess:
+    Type: Task
+    Resource: arn:aws:states:::sns:publish
+    Parameters:
+      Message.$: $
+      TopicArn: ${NotifySuccess}
+    End: true
+    ResultSelector:
+      OrderId: $.orderId
+      Order Status: Completed

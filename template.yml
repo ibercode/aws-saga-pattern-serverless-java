@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: aws-publisher-subscriber-pattern
+
+Globals:
+  Function:
+    Runtime: java11
+    MemorySize: 3072
+    Timeout: 30
+  Api:
+    OpenApiVersion: '3.0.1'
+
+Resources:
+  #API Gateway
+  OrdersAPIGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Name: OrdersAPIGateway
+
+#Lambdas
+  Orders:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Orders
+      Handler: com.ibercode.orders.Orders::handleRequest
+      CodeUri: target/sourceCode.zip
+      Events:
+        ApiEvents:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: POST
+            RestApiId: !Ref OrdersAPIGateway
+      Policies:
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: !GetAtt OrdersStateMachine.Name
+      Environment:
+        Variables:
+          StateMachineArn: !GetAtt OrdersStateMachine.Arn
+
+  PaymentProcess:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: PaymentProcess
+      Handler: com.ibercode.payment.PaymentProcess::handleRequest
+      CodeUri: target/sourceCode.zip
+
+  RefundCustomer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: RefundCustomer
+      Handler: com.ibercode.refund.RefundCustomer::handleRequest
+      CodeUri: target/sourceCode.zip
+
+  FulfillOrder:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: FulfillOrder
+      Handler: com.ibercode.fulfillment.FulfillOrder::handleRequest
+      CodeUri: target/sourceCode.zip
+
+  #SNS Topics
+  NotifySuccess:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: NotifySuccess
+
+  NotifyFailure:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: NotifyFailure
+
+  #DynamoDB Tables
+  OrdersTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: OrdersTable
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  # Step Functions
+  OrdersStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: sfn-definition.asl.yml
+      DefinitionSubstitutions:
+        RefundCustomer: !GetAtt RefundCustomer.Arn
+        PaymentProcess: !GetAtt PaymentProcess.Arn
+        FulfillOrder: !GetAtt FulfillOrder.Arn
+        NotifySuccess: !Ref NotifySuccess
+        NotifyFailure: !Ref NotifyFailure
+      Name: OrderOrchestrator
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - "cloudwatch:*"
+                - "logs:*"
+                - "lambda:InvokeFunction"
+                - "sns:Publish"
+              Resource: "*"
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+
+Outputs:
+  PaymentsEndpoint:
+    Description: API Gateway Orders Endpoint
+    Value:
+      Fn::Sub: https://${OrdersAPIGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/orders
