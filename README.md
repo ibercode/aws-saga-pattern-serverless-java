@@ -111,11 +111,11 @@ curl -X POST https://API_GATEWAY_URL -H "Content-Type: application/json" -d '{"c
 
 
  Step-Functions PAYMENT FAILURE
-<img src="states/payment-failed.png" alt="" width="80%"/>
+<img src="states/payment-failed.png" alt="" width="45%"/>
 
 
  DynamoDB Transactions
-<img src="dynamodb-transactions.png" alt="" width="45%"/>
+<img src="dynamodb-transactions.png" alt="" width="80%"/>
 
  CLEAN-UP
 ````
